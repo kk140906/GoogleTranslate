@@ -564,6 +564,7 @@ void MainWindow::showSynonym_zh_CN()
   QFontMetrics fontSize(font);
   QGridLayout *Synonym_zh_CNLayout = new QGridLayout(ui->Synonym_zh_CNContents);
   Synonym_zh_CNLayout->setObjectName("Synonym_zh_CNLayout");
+  Synonym_zh_CNLayout->setColumnMinimumWidth(0,40);
   Synonym_zh_CNLayout->setColumnMinimumWidth(1,250);
   Synonym_zh_CNLayout->setColumnMinimumWidth(2,50);
 //  Synonym_zh_CNLayout->setColumnStretch(0,0);
