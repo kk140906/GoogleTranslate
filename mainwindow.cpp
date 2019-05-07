@@ -590,7 +590,6 @@ void MainWindow::showSynonym_zh_CN()
           QJsonArray  zh_CNContentArray= wordPropertryArray.at(j).toArray();
           QString ColContent1 = zh_CNContentArray.at(0).toString();
           int ColContent1Width = fontSize.width(ColContent1);
-          qDebug()<<ColContent1Width<<ColContent1;
           if(ColContent1Width > 35)
             {
               int  ColContent1Size= ColContent1.size();
