@@ -566,9 +566,9 @@ void MainWindow::showSynonym_zh_CN()
   Synonym_zh_CNLayout->setObjectName("Synonym_zh_CNLayout");
   Synonym_zh_CNLayout->setColumnMinimumWidth(1,250);
   Synonym_zh_CNLayout->setColumnMinimumWidth(2,50);
-  Synonym_zh_CNLayout->setColumnStretch(0,0);
-  Synonym_zh_CNLayout->setColumnStretch(1,0);
-  Synonym_zh_CNLayout->setColumnStretch(2,0);
+//  Synonym_zh_CNLayout->setColumnStretch(0,0);
+//  Synonym_zh_CNLayout->setColumnStretch(1,0);
+//  Synonym_zh_CNLayout->setColumnStretch(2,0);
   Synonym_zh_CNLayout->setAlignment(Qt::AlignCenter);
   int Synonym_zh_CNRow=0;
   int Synonym_zh_CNCol=0;
@@ -590,13 +590,14 @@ void MainWindow::showSynonym_zh_CN()
           QJsonArray  zh_CNContentArray= wordPropertryArray.at(j).toArray();
           QString ColContent1 = zh_CNContentArray.at(0).toString();
           int ColContent1Width = fontSize.width(ColContent1);
-          if(ColContent1Width > 50)
+          qDebug()<<ColContent1Width<<ColContent1;
+          if(ColContent1Width > 35)
             {
               int  ColContent1Size= ColContent1.size();
               qreal singleCharWidth = ColContent1Width/ColContent1Size;
               for(int indexColcontent1 = 0;indexColcontent1<ColContent1Size;indexColcontent1++)
                 {
-                  if(indexColcontent1 * singleCharWidth > 50 )
+                  if(indexColcontent1 * singleCharWidth > 35 )
                     {
                       if(ColContent1.at(indexColcontent1) == QChar(' ') ||
                          ColContent1.at(indexColcontent1) == QChar(';') ||
@@ -645,7 +646,7 @@ void MainWindow::showSynonym_zh_CN()
               labelColContent2->setTextInteractionFlags(Qt::TextSelectableByMouse);
               FontWidth = fontSize.width(ColContent2)+15; //Word Width;
 
-              if(WidthPos_X + FontWidth > 240)
+              if(WidthPos_X + FontWidth > 200)
                 {
                   QSpacerItem *ColContent2HLayoutSpacer1= new QSpacerItem(240-WidthPos_X,
                                                                           FontHeight,
