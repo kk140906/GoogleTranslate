@@ -7,4 +7,4 @@
 ![](https://github.com/kk140906/GoogleTranslate/blob/master/Images/zh_CN_en(Word).png)
 ![](https://github.com/kk140906/GoogleTranslate/blob/master/Images/en_zh_CN(Sentence).png)
 ![](https://github.com/kk140906/GoogleTranslate/blob/master/Images/zh_CN_en(Sentence).png)
-# GoogleTranslate
+
