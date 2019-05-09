@@ -164,14 +164,27 @@ bool MainWindow::eventFilter(QObject *object,QEvent *event)
 
 void MainWindow::ShowWindow()
 {
-  QPoint cursorPos;
   errorFlag = false;
   EmptyData();
   SimulateCopy();
   Sleep(230);
   GetData();
   if(errorFlag) return;
+  QPoint cursorPos;
+  int mainWindowWidth;
+  int mainWindowHeight;
+  int desktopWidth;
+  int desktopHeight;
   cursorPos=QCursor::pos();
+  desktopWidth = QApplication::desktop()->width();
+  desktopHeight = QApplication::desktop()->height();
+  mainWindowWidth = geometry().size().width();
+  mainWindowHeight = geometry().size().height();
+  if(cursorPos.x()+mainWindowWidth > desktopWidth || cursorPos.y()+mainWindowHeight >desktopHeight)
+    {
+     cursorPos.setX((desktopWidth-380)/2);
+     cursorPos.setY((desktopHeight-280)/2);
+    }
   move(cursorPos);
   show();
   activateWindow();
