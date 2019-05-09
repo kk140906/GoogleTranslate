@@ -119,7 +119,7 @@ void MainWindow::GetData()
       lptstr = static_cast<LPSTR>(GlobalLock(HglbClipboard));
       if (lptstr != nullptr)
         {
-          ui->InputContent->setPlainText(QString::fromLocal8Bit(lptstr).replace(QRegularExpression("(?<=[\\w\\s\\-])\r\n")," "));
+          ui->InputContent->setPlainText(QString::fromLocal8Bit(lptstr).replace(QRegularExpression("(?<=[\\w\\s\\-,])\r\n")," "));
           GlobalUnlock(HglbClipboard);
         }
     }
