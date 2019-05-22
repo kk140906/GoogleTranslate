@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -21,8 +21,9 @@ MainWindow::MainWindow(QWidget *parent) :
   QObject::connect(this,SIGNAL(ReadSynonym_enisfinished()),this,SLOT(showSynonym_en()));
 
   editTimer =new QTimer(this);
+  NetworkConnetTimer = new QTimer(this);
   QObject::connect(editTimer,SIGNAL(timeout()),this,SLOT(TimerEnd()));
-
+  QObject::connect(NetworkConnetTimer,SIGNAL(timeout()),this,SLOT(NetWorkTimeout()));
   waitProgess = new WaitProgress(ui->MainWidget);
   waitProgess->setGeometry(QRect(180,200,25,25));
   waitProgess->setColor(QColor(220,165,25));
@@ -38,6 +39,10 @@ void MainWindow::DebugHandle(QString info,int handle)
       hide();
       waitProgess->stopAnimation();
       _isRunning = false;
+      editTimer->stop();
+      NetworkConnetTimer->stop();
+      ui->Synonym_enScrollArea->hide();
+      ui->Synonym_zh_CNScrollArea->hide();
     }
   if(!DebuglogFlag) return;
   QDateTime currentDateTime = QDateTime::currentDateTime();
@@ -64,12 +69,12 @@ void MainWindow::DebugHandle(QString info,int handle)
       }
     case _warn:
       {
-        debugOut<<"Warn:["<<Time<<"] : "<<info<<"\n";
+        debugOut<<"Warn: ["<<Time<<"] : "<<info<<"\n";
         break;
       }
     case _info:
       {
-        debugOut<<"Info:["<<Time<<"] : "<<info<<"\n";
+        debugOut<<"Info: ["<<Time<<"] : "<<info<<"\n";
         break;
       }
     default:
@@ -80,7 +85,6 @@ void MainWindow::DebugHandle(QString info,int handle)
 
 MainWindow::~MainWindow()
 {
-  DeleteAllScrollObject();
   delete ui;
 }
 
@@ -410,6 +414,8 @@ void MainWindow::ReadTkk()
 void MainWindow::TextisChanged()
 {
   ui->ReturnResult->clear();
+  ui->Synonym_enScrollArea->hide();
+  ui->Synonym_zh_CNScrollArea->hide();
   text = ui->InputContent->toPlainText();
   if(text.isEmpty())
     {
@@ -418,12 +424,6 @@ void MainWindow::TextisChanged()
       return;
     }
   waitProgess->startAnimation();
-  DeleteAllScrollObject();
-  if(editTimer->isActive())
-    {
-     emit DebugOutput("Timer is running!",_warn);
-      return;
-    }
   editTimer->start(600);
   textChangeFlag = true;
 }
@@ -431,6 +431,7 @@ void MainWindow::TextisChanged()
 void MainWindow::TimerEnd()
 {
   editTimer->stop();
+  NetworkConnetTimer->start(5000);
     if(_isRunning)
       {
         emit DebugOutput("Last Network operate is running!",_warn);
@@ -440,7 +441,12 @@ void MainWindow::TimerEnd()
     UpdateTkk();
     return;
 }
+void MainWindow::NetWorkTimeout()
+{
+  NetworkConnetTimer->stop();
+  emit DebugOutput("Network Timeout!");
 
+}
 void MainWindow::CalToken()
 {
   //Only UpdateTKK & Text is changed can calculate token
@@ -528,6 +534,7 @@ void MainWindow::ManagerResultisfinished()
 
 void MainWindow::ReadResult()
 {
+  _isRunning = false;
   QVariant statusCode = replyResult->attribute(QNetworkRequest::HttpStatusCodeAttribute);
   if(statusCode.isValid())
     {
@@ -540,6 +547,7 @@ void MainWindow::ReadResult()
           return;
         }
     }
+  NetworkConnetTimer->stop();
   QByteArray response=replyResult->readAll();
   QJsonDocument jsonDoc =QJsonDocument::fromJson(response);
   QJsonArray jsonArray = jsonDoc.array();
@@ -549,13 +557,12 @@ void MainWindow::ReadResult()
     {
       TranslateResult.append(TranslateResultJsonArray.at(j).toArray().at(0).toString());
     }
+  if(text.isEmpty()) return;
   emit ReadResultisfinished(TranslateResult);
   if(!jsonArray.at(1).isNull())
     {
       Synonym_zh_CN = jsonArray.at(1).toArray();
       emit ReadSynonym_zh_CNisfinished();
-
-
     }
   if(jsonArray.size()>=12)
     {
@@ -566,12 +573,12 @@ void MainWindow::ReadResult()
         }
     }
   waitProgess->stopAnimation();
-  _isRunning = false;
   replyResult->close();
 }
 
 void MainWindow::showSynonym_zh_CN()
 {
+  DeleteSynonym_zh_CNScrollArea();
   ui->Synonym_zh_CNScrollArea->show();
   QFont font("Consolas",10);
   QFontMetrics fontSize(font);
@@ -703,6 +710,7 @@ void MainWindow::showSynonym_zh_CN()
 
 void MainWindow::showSynonym_en()
 {
+  DeleteSynonym_enScrollArea();
   ui->Synonym_enScrollArea->show();
   QFont font("Consolas",10);
   QFontMetrics fontSize(font);
@@ -759,16 +767,12 @@ void MainWindow::showSynonym_en()
   ui->Synonym_enContents->adjustSize();
 }
 
-void MainWindow::DeleteAllScrollObject()
+void MainWindow::DeleteSynonym_enScrollArea()
 {
-  ui->Synonym_enScrollArea->hide();
-  ui->Synonym_zh_CNScrollArea->hide();
+
   QScrollBar *Synonym_enScrollBar = ui->Synonym_enScrollArea->verticalScrollBar();
   Synonym_enScrollBar->setValue(Synonym_enScrollBar->minimum());
-  QScrollBar *Synonym_zh_CNScrollBar = ui->Synonym_zh_CNScrollArea->verticalScrollBar();
-  Synonym_zh_CNScrollBar->setValue(Synonym_zh_CNScrollBar->minimum());
   QObjectList ListSynonym_en = ui->Synonym_enContents->children();
-  QObjectList ListSynonym_zh_CN = ui->Synonym_zh_CNContents->children();
   if(!ListSynonym_en.isEmpty())
     {
       for(int i=0;i<ListSynonym_en.size();i++)
@@ -777,6 +781,14 @@ void MainWindow::DeleteAllScrollObject()
 //          ListSynonym_en.at(i)->deleteLater(); /*Can't delete object immediately*/
         }
     }
+  return;
+}
+void MainWindow::DeleteSynonym_zh_CNScrollArea()
+{
+
+  QScrollBar *Synonym_zh_CNScrollBar = ui->Synonym_zh_CNScrollArea->verticalScrollBar();
+  Synonym_zh_CNScrollBar->setValue(Synonym_zh_CNScrollBar->minimum());
+  QObjectList ListSynonym_zh_CN = ui->Synonym_zh_CNContents->children();
   if(!ListSynonym_zh_CN.isEmpty())
     {
       for(int j=0;j<ListSynonym_zh_CN.size();j++)

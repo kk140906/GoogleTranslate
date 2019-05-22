@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include <qt_windows.h>
 #include <QMainWindow>
@@ -61,7 +61,8 @@ public:
     long long CalTokenMidValue(long long a, QString b);
     void CalOringinToken(QString text,QString tkk = "0");
     void UpdateTkk();
-    void DeleteAllScrollObject();
+    void DeleteSynonym_enScrollArea();
+    void DeleteSynonym_zh_CNScrollArea();
 
 signals:
     void UpdateTkkisfinished();
@@ -87,6 +88,7 @@ private:
     QString text;//The text is need to translate;
     bool textChangeFlag=false;
     QTimer *editTimer;
+    QTimer *NetworkConnetTimer;
     int TextChangedCount;
 
     int ChineseCount = 0;
@@ -139,6 +141,7 @@ private slots:
     void showSynonym_zh_CN();
     void DebugHandle(QString,int handle = _error);
     void TimerEnd();
+    void NetWorkTimeout();
 };
 
 #endif // MAINWINDOW_H

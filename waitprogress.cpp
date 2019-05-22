@@ -1,7 +1,4 @@
-#include <waitprogress.h>
-
-#include "WaitProgress.h"
-
+﻿#include <waitprogress.h>
 #include <QPainter>
 #include <QDebug>
 
