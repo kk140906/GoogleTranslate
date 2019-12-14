@@ -39,6 +39,7 @@
 #include <QScrollBar>
 #include <percentratio.h>
 #include <QTimer>
+#include <QHostInfo>
 
 namespace Ui
 {
@@ -102,7 +103,7 @@ private:
     QAction *action_exit;
     QAction *action_logcontrl;
 
-    bool DebuglogFlag=false;
+    bool DebuglogFlag = false;
 
 
 
@@ -124,6 +125,7 @@ private:
     WaitProgress *waitProgess;
 
     QMessageBox msgBox;
+    bool networkconnected = true;
 
 
 
@@ -142,6 +144,7 @@ private slots:
     void DebugHandle(QString,int handle = _error);
     void TimerEnd();
     void NetWorkTimeout();
+    void TestNetWork(const QHostInfo &host);
 };
 
 #endif // MAINWINDOW_H

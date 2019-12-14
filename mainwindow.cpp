@@ -10,7 +10,6 @@ MainWindow::MainWindow(QWidget *parent) :
   setWindowFlags(Qt::FramelessWindowHint);
   ui->TitleFrame->installEventFilter(this);
   CreateTrayIcon();
-  UpdateTkk();//Create object Firstly Update TKK;
   QObject::connect(this,SIGNAL(DebugOutput(QString,int)),this,SLOT(DebugHandle(QString,int)));
   QObject::connect(ui->TitleMinimizeLabel,SIGNAL(clicked()),this,SLOT(close()));
   QObject::connect(ui->InputContent,SIGNAL(textChanged()),this,SLOT(TextisChanged()));
@@ -29,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent) :
   waitProgess->setColor(QColor(220,165,25));
   ui->Synonym_enScrollArea->hide();
   ui->Synonym_zh_CNScrollArea->hide();
+  if(DebuglogFlag) action_logcontrl->setIconVisibleInMenu(true);
+  UpdateTkk();//Create object Firstly Update TKK;
 }
 
 void MainWindow::DebugHandle(QString info,int handle)
@@ -59,22 +60,22 @@ void MainWindow::DebugHandle(QString info,int handle)
     {
     case _debug:
       {
-        debugOut<<"Debug:["<<Time<<"] : "<<info<<"\n";
+        debugOut<<"D:["<<Time<<"] :"<<info<<"\n";
         break;
       }
     case _error:
       {
-        debugOut<<"Error:["<<Time<<"] : "<<info<<"\n";
+        debugOut<<"E:["<<Time<<"] :"<<info<<"\n";
         break;
       }
     case _warn:
       {
-        debugOut<<"Warn: ["<<Time<<"] : "<<info<<"\n";
+        debugOut<<"W:["<<Time<<"] :"<<info<<"\n";
         break;
       }
     case _info:
       {
-        debugOut<<"Info: ["<<Time<<"] : "<<info<<"\n";
+        debugOut<<"I:[:"<<Time<<"] :"<<info<<"\n";
         break;
       }
     default:
@@ -345,41 +346,43 @@ void MainWindow::CalOringinToken(QString text,QString tkk)
 
 void MainWindow::UpdateTkk()
 {
-
-  if(!NewTkk.isEmpty())
-    {
-      QList<QString>  NewTkkList= NewTkk.split('.');
-      long long TkkList = NewTkkList.size() > 1 ? NewTkkList.at(0).toLongLong() : 0;
-      long long current = static_cast<long long>(floor(QDateTime::currentMSecsSinceEpoch()/3600000.0));
-      if(current == TkkList)
+    QHostInfo::lookupHost("translate.google.cn",this, SLOT(TestNetWork(QHostInfo)));
+    if(!NewTkk.isEmpty())
         {
-          emit DebugOutput("TKK is up to date",_info);
-          emit UpdateTkkisfinished();
+          QList<QString>  NewTkkList= NewTkk.split('.');
+          long long TkkList = NewTkkList.size() > 1 ? NewTkkList.at(0).toLongLong() : 0;
+          long long current = static_cast<long long>(floor(QDateTime::currentMSecsSinceEpoch()/3600000.0));
+          if(current == TkkList)
+            {
+              emit DebugOutput("TKK is up to date",_info);
+              emit UpdateTkkisfinished();
+              return;
+            }
+        }
+    managerTKK=new QNetworkAccessManager(this);
+
+    if(!networkconnected)
+        {
+          QMessageBox msgBox;
+          emit DebugOutput("UpdateTKK Network Disconnect Error!");
+          msgBox.activateWindow();
+          msgBox.critical(this,"GoogleTranslate","Network disconnect!");
           return;
         }
-    }
-  managerTKK=new QNetworkAccessManager(this);
-  if(!managerTKK->networkAccessible())
-    {
-      QMessageBox msgBox;
-      emit DebugOutput("UpdateTKK Network Disconnect Error!");
-      msgBox.activateWindow();
-      msgBox.critical(this,"GoogleTranslate","Network disconnect!");
-      return;
-    }
-  requestTKK.setUrl(QUrl("https://translate.google.cn/"));
-  requestTKK.setRawHeader(QByteArray("user-agent"),
-                          QByteArray("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36"));
-  replyTKK=managerTKK->get(requestTKK);
-  if(replyTKK->error()!=QNetworkReply::NoError)
-    {
-      QMessageBox msgBox;
-      msgBox.activateWindow();
-      msgBox.critical(this,"GoogleTranslate","Network Request Error!");
-      emit DebugOutput("UpdateTKK Request Error!");
-      return;
-    }
-  QObject::connect(replyTKK,SIGNAL(finished()),this,SLOT(ReadTkk()));
+    requestTKK.setUrl(QUrl("https://translate.google.cn/"));
+    requestTKK.setRawHeader(QByteArray("user-agent"),
+                              QByteArray("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36"));
+    replyTKK=managerTKK->get(requestTKK);
+    if(replyTKK->error()!=QNetworkReply::NoError)
+        {
+          QMessageBox msgBox;
+          msgBox.activateWindow();
+          msgBox.critical(this,"GoogleTranslate","Network Request Error!");
+          emit DebugOutput("UpdateTKK Request Error!");
+          return;
+        }
+    QObject::connect(replyTKK,SIGNAL(finished()),this,SLOT(ReadTkk()));
+    return;
 }
 
 void MainWindow::ReadTkk()
@@ -397,14 +400,14 @@ void MainWindow::ReadTkk()
   QRegularExpression re_tkk("tkk:\'([0-9,\\.]+?)\'");
   QRegularExpressionMatch matched = re_tkk.match(response);
   if (matched.hasMatch())
-    {
-      NewTkk = matched.captured(1);
-      emit UpdateTkkisfinished();
-      emit DebugOutput("NewTKK:"+NewTkk,_info);
-      managerTKK->deleteLater();
-      replyTKK->deleteLater();
-      return;
-    }
+        {
+          NewTkk = matched.captured(1);
+          emit UpdateTkkisfinished();
+          emit DebugOutput("NewTKK:"+NewTkk,_info);
+          managerTKK->deleteLater();
+          replyTKK->deleteLater();
+          return;
+        }
   replyTKK->close();
   return;
 }
@@ -424,7 +427,7 @@ void MainWindow::TextisChanged()
       return;
     }
   waitProgess->startAnimation();
-  editTimer->start(600);
+  editTimer->start(300);
   textChangeFlag = true;
 }
 
@@ -434,7 +437,7 @@ void MainWindow::TimerEnd()
   NetworkConnetTimer->start(5000);
     if(_isRunning)
       {
-        emit DebugOutput("Last Network operate is running!",_warn);
+        emit DebugOutput("Last Network Operate Is Running!",_warn);
         return;
       }
     _isRunning = true;
@@ -444,8 +447,11 @@ void MainWindow::TimerEnd()
 void MainWindow::NetWorkTimeout()
 {
   NetworkConnetTimer->stop();
-  emit DebugOutput("Network Timeout!");
-
+  emit DebugOutput("Network Timeout!",_error);
+  QMessageBox msgBox;
+  msgBox.activateWindow();
+  msgBox.critical(this,"GoogleTranslate","Network Timeout!");
+  return;
 }
 void MainWindow::CalToken()
 {
@@ -496,11 +502,12 @@ void MainWindow::WebRequest()
   url=QString("https://translate.google.cn/translate_a/single?");
   url.setQuery(urlgooglequery);
   managerResult=new QNetworkAccessManager(this);
-  if(managerResult->networkAccessible()==QNetworkAccessManager::NotAccessible)
+  QHostInfo::lookupHost("translate.google.cn",this, SLOT(TestNetWork(QHostInfo)));
+  if(!networkconnected)
     {
       QMessageBox msgBox;
       msgBox.activateWindow();
-      msgBox.critical(this,"GoogleTranslate","Network disconnect!");
+      msgBox.critical(this,"GoogleTranslate","Network Disconnect!");
 
       emit DebugOutput("WebRequest Network Disconnect Error!");
       return;
@@ -610,7 +617,8 @@ void MainWindow::showSynonym_zh_CN()
         {
           QJsonArray  zh_CNContentArray= wordPropertryArray.at(j).toArray();
           QString ColContent1 = zh_CNContentArray.at(0).toString();
-          int ColContent1Width = fontSize.width(ColContent1);
+//          int ColContent1Width = fontSize.width(ColContent1);
+          int ColContent1Width = fontSize.horizontalAdvance(ColContent1);
           if(ColContent1Width > 35)
             {
               int  ColContent1Size= ColContent1.size();
@@ -664,8 +672,8 @@ void MainWindow::showSynonym_zh_CN()
               labelColContent2->setText(ColContent2);
               labelColContent2->setMinimumHeight(FontHeight);
               labelColContent2->setTextInteractionFlags(Qt::TextSelectableByMouse);
-              FontWidth = fontSize.width(ColContent2)+15; //Word Width;
-
+//              FontWidth = fontSize.width(ColContent2)+15; //Word Width;
+              FontWidth = fontSize.horizontalAdvance(ColContent2)+15; //Word Width;
               if(WidthPos_X + FontWidth > 200)
                 {
                   QSpacerItem *ColContent2HLayoutSpacer1= new QSpacerItem(240-WidthPos_X,
@@ -726,7 +734,8 @@ void MainWindow::showSynonym_en()
       wordPropertry += QString(":");
       labelwordPropertry->setFont(font);
       labelwordPropertry->setObjectName(wordPropertry);
-      labelwordPropertry->setGeometry(QRect(WidthPos_X,HeightPos_Y,fontSize.width(wordPropertry),FontHeight));
+//      labelwordPropertry->setGeometry(QRect(WidthPos_X,HeightPos_Y,fontSize.width(wordPropertry),FontHeight));
+      labelwordPropertry->setGeometry(QRect(WidthPos_X,HeightPos_Y,fontSize.horizontalAdvance(wordPropertry),FontHeight));
       labelwordPropertry->setText(wordPropertry);
       labelwordPropertry->show();
       WidthPos_X = 0;
@@ -742,7 +751,8 @@ void MainWindow::showSynonym_en()
               QString enContent = enArray.at(k).toString();
               labelcontent->setObjectName(enContent);
               labelcontent->setText(enContent);
-              FontWidth = fontSize.width(enContent)+10;
+//              FontWidth = fontSize.width(enContent)+10;
+              FontWidth = fontSize.horizontalAdvance(enContent)+10;
               if(WidthPos_X + FontWidth > 210)
                 {
                   WidthPos_X = 0;
@@ -798,4 +808,21 @@ void MainWindow::DeleteSynonym_zh_CNScrollArea()
         }
     }
   return;
+}
+
+void MainWindow::TestNetWork(const QHostInfo &host)
+{
+    if (host.error() != QHostInfo::NoError)
+    {
+        QMessageBox msgBox;
+        emit DebugOutput("Network Lookup failed!");
+        msgBox.activateWindow();
+        msgBox.critical(this,"GoogleTranslate","Network Lookup failed!");
+        networkconnected = false;
+        return;
+    }
+    emit DebugOutput("Network Ok!",_info);
+    networkconnected = true;
+    return;
+
 }
