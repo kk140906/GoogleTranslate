@@ -21,6 +21,7 @@ set(REQUIRED_LIBS_QUALIFIED Qt${QT_VERSION}::Core Qt${QT_VERSION}::Gui Qt${QT_VE
 # 查找Qt的包
 find_package(Qt${QT_VERSION} COMPONENTS ${REQUIRED_LIBS} REQUIRED)
 
+# 指定为GUI运行，而不是控制台
 add_executable(${PROJECT_NAME} WIN32)
 
 if (NOT CMAKE_PREFIX_PATH)
@@ -30,6 +31,8 @@ endif ()
 
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
+file(GLOB_RECURSE THIRD_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_module/spdlog/src/*.cpp)
 
 set(MAIN_WINDOW src/mainwindow.ui)
 set(RESOURCES src/resource.qrc)
@@ -37,12 +40,14 @@ target_sources(${PROJECT_NAME}
         PRIVATE
         ${MAIN_WINDOW}
         ${RESOURCES}
-        ${SOURCES} ${HEADERS})
+        ${SOURCES} ${HEADERS}
+        ${THIRD_SOURCES})
 
 target_include_directories(${PROJECT_NAME}
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_autogen/include)
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_autogen/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_module/spdlog/include)
 target_compile_definitions(${PROJECT_NAME} PRIVATE QT${QT_VERSION})
 # 将Qt的库链接到可执行文件
 target_link_libraries(${PROJECT_NAME} PRIVATE ${REQUIRED_LIBS_QUALIFIED})
@@ -50,7 +55,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${REQUIRED_LIBS_QUALIFIED})
 # Windows平台相关的设置，如果是Debug则拷贝的库是带有d标志的dll
 if (WIN32)
     set(DEBUG_SUFFIX)
-    # 为了解决Qt5.14 MinGW不再提供带d的dll而新增加两个条件限制一下，QT_MINOR_VERSION是在前面自定义的
+    # 为了解决Qt5.14 MinGW不再提供带d的dll,增加两个条件限制一下
     if (CMAKE_BUILD_TYPE MATCHES "Debug"
             AND QT_VERSION LESS_EQUAL 5
             AND QT_MINOR_VERSION LESS 14)

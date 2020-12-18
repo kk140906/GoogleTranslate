@@ -3,6 +3,7 @@
  */
 
 #include <tray_icon.h>
+#include <logger.h>
 
 TrayIcon::TrayIcon(QWidget *parent) :
         parent_(parent),
@@ -56,6 +57,7 @@ void TrayIcon::show_window_() {
 
 void TrayIcon::exit_program() {
     system_tray_icon_->hide();
+    Log::logger->info("application stop.");
     exit(EXIT_SUCCESS);
 }
 

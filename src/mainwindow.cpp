@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "system_operate.h"
+#include "logger.h"
 
 MainWindow::MainWindow(QWidget *parent) :
         QMainWindow(parent),
@@ -86,6 +87,7 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event) {
 
 void MainWindow::UpdateText() {
     ui->InputContent->setPlainText(system_operate::get_copied_text_());
+    ui->InputContent->moveCursor(QTextCursor::End,QTextCursor::MoveAnchor);
     show_window_();
 }
 
@@ -111,6 +113,7 @@ void MainWindow::prepare_() {
 
 void MainWindow::edit_timeout_() {
     translator_->SetText(text_);
+    Log::logger->info(("translate text: " + text_).toStdString());
     translator_->Run();
     edit_timer_->stop();
     circle_progress_->Stop();
@@ -129,7 +132,7 @@ void MainWindow::parse_result_(const std::shared_ptr<QJsonArray> &result_array) 
         }
     }
     ui->ReturnResult->setPlainText(result_string);
-
+    Log::logger->info(("translate result: " + result_string).toStdString());
     if (!result_array->at(1).isNull()) {
         synonym_zh_CN_all_ = result_array->at(1).toArray();
         emit synonym_zh_CN_found();
